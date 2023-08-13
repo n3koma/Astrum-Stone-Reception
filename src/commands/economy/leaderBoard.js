@@ -36,14 +36,14 @@ module.exports = {
         const reqType = interaction.options.get('type');
         //スイッチしてやる
         switch (reqType) {
-            case "level":
+            case "Astrum Rank":
                 levelProcess(interaction, userData, targetUserObj);
                 break;
-            case "balance":
+            case "Balance":
                 balanceProcess(interaction, userData, targetUserObj);
                 break;
             default:
-                throw "error";
+                throw "Switch error";
                 return;
                 break;
         }
