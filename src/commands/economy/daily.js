@@ -1,16 +1,17 @@
 const { Client, Interaction } = require('discord.js');
-const User = require('../../models/User');
-const Level = require('../../models/Level');
+const UserDB = require('../../models/User');
+const LevelDB = require('../../models/Level');
 
 module.exports = {
   name: 'wish',
   description: '星に願う  一日一回まで',
+  //これは、エディターでエラーが出るのを防ぐ。実行時は関係ない。
   /**
-   *
    * @param {Client} client
    * @param {Interaction} interaction
    */
   callback: async (client, interaction) => {
+    //コールバック関数。実行された際、これを実行する。
     if (!interaction.inGuild()) {
       interaction.reply({
         content: 'このコマンドはサーバー内のみで実行できます',
@@ -20,42 +21,43 @@ module.exports = {
     }
 
     try {
+      //考え中...にする。これをしないと、15秒でタイムアウトになる。
       await interaction.deferReply();
 
+      //インタラクションのデータを読む
       const query = {
         userId: interaction.member.id,
         guildId: interaction.guild.id,
       };
 
-      let user = await User.findOne(query);
-      let level = await Level.findOne(query);
+      //DBからqueryのデータを探す
+      let user = await UserDB.findOne(query);
+      let level = await LevelDB.findOne(query);
 
-      if (!user) {
-        interaction.editReply(`<@${interaction.member.id}> はまだprofileを持っていません`);
-        return;
-      }
-
+      //登録されているか
       if (user) {
         const lastDailyDate = user.lastDaily.toDateString();
         const currentDate = new Date().toDateString();
 
+        //今日もう既にやったか
         if (lastDailyDate === currentDate) {
           interaction.editReply(
             `今日は既に願いました\r\n明日にはまた綺麗な星が見れるでしょう`
           );
           return;
         }
-        
+        //やってなかった時の時刻登録
         user.lastDaily = new Date();
       } else {
-        user = new User({
+        //登録
+        user = new UserDB({
           ...query,
           lastDaily: new Date(),
         });
       }
 
-      const dailyAmountLevel = level.level;
-      const dailyAmount = dailyAmountLevel;
+      //レベルを変数に割り当て
+      const dailyAmount = level.level;
 
       user.balance += dailyAmount;
       await user.save();

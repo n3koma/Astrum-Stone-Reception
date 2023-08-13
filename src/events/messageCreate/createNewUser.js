@@ -2,7 +2,6 @@ const { Client, Message } = require('discord.js');
 const User = require('../../models/User');
 
 /**
- * 
  * @param {Client} client
  * @param {Message} message
  */

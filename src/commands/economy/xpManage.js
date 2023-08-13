@@ -5,7 +5,6 @@ const Level = require('../../models/Level');
 
 module.exports = {
     /**
-     *
      * @param {Client} client
      * @param {Interaction} interaction
      */

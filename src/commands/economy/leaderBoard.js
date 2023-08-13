@@ -1,11 +1,9 @@
 const { Client, Interaction, ApplicationCommandOptionType, EmbedBuilder } = require('discord.js');
-const calculateLevelXp = require('../../utils/calculateLevelXp');
-const Level = require('../../models/Level');
-const User = require('../../models/User');
+const LevelDB = require('../../models/Level');
+const UserDB = require('../../models/User');
 
 module.exports = {
     /**
-     * 
      * @param {Client} client 
      * @param {Interaction} interaction 
      */
@@ -26,57 +24,30 @@ module.exports = {
         const query = {
             userId: interaction.member.id,
             guildId: interaction.guild.id,
-          };
-    
-          let user = await User.findOne(query);
-          let level = await Level.findOne(query);
+        };
 
-        if (!level) {
-            interaction.editReply(
-                mentionedUserId ? `${targetUserObj.user.tag} はまだlevelsを持っていません\r\nチャットがもう少し進んだ時に再度試してください`
-                : `あなたはまだlevelsを持っていません\r\nチャットがもう少し進んだ時に再度試してください`
-            );
+        let userData = await UserDB.findOne(query);
+        //resist外
+        if (!userData) {
+            interaction.editReply(`<@${interaction.member.id}> はまだprofileを持っていません`);
             return;
         }
 
-        if (!user) {
-            interaction.editReply(`<@${interaction.member.id}> はまだprofileを持っていません`);
-            return;
-          }
-
-        let allLevels = await Level.find({ guildId: interaction.guild.id }).select('-_id userId level xp');
-        let allBalances = await User.find({ guildId: interaction.guild.id }).select('-_id userId balance');
-
-
-        allLevels.sort((a, b) => {
-            if (a.level === b.level) {
-                return b.xp - a.xp;
-            } else {
-                return b.level - a.level;
-            }
-        });
-
-        allBalances.sort((a, b) => {return b.balance - a.level;})
-        
-        console.log(allLevels)
-
-        let currentRank = allLevels.findIndex((lvl) => lvl.userId === targetUserId) + 1;
-        let currentBalance = allBalances.findIndex((bal) => bal.userId === targetUserId) + 1;
-
-        const exampleEmbed = new EmbedBuilder()
-	    .setColor(0x0099FF)
-	    .setTitle('Astrum Rank Leaderboard')
-	    .setAuthor({ name: `${interaction.guild.name}`, iconURL: `${interaction.guild.iconURL()}` })
-	    .setThumbnail(`${interaction.guild.me.avatarURL({ extension: 'png' })}`,
-	    	{ name: 'Regular field title', value: 'Some value here' },
-	    )
-	    .setImage('https://i.imgur.com/AfFp7pu.png')
-	    .setTimestamp()
-	    .setFooter({ text: 'Some footer text here', iconURL: 'https://i.imgur.com/AfFp7pu.png' });
-
-    channel.send({ embeds: [exampleEmbed] });
+        const reqType = interaction.options.get('type');
+        //スイッチしてやる
+        switch (reqType) {
+            case "level":
+                levelProcess(interaction, userData, targetUserObj);
+                break;
+            case "balance":
+                balanceProcess(interaction, userData, targetUserObj);
+                break;
+            default:
+                throw "error";
+                return;
+                break;
+        }
     },
-    
     name: 'top',
     description: 'リーダーボードを表示する',
     options: [
@@ -98,3 +69,66 @@ module.exports = {
         },
     ],
 };
+
+const levelProcess = async (interaction, userData, targetUserObj) => {
+    //データ取得
+    let levelData = await LevelDB.findOne(query);
+
+    if (!levelData) {
+        interaction.editReply(
+            mentionedUserId ? `${targetUserObj.user.tag} はまだlevelsを持っていません\r\nチャットがもう少し進んだ時に再度試してください`
+                : `あなたはまだlevelsを持っていません\r\nチャットがもう少し進んだ時に再度試してください`
+        );
+        return;
+    }
+
+    let allLevels = await LevelDB.find({ guildId: interaction.guild.id }).select('-_id userId level xp');
+
+    //これでソート
+    allLevels.sort((a, b) => {
+        if (a.level === b.level) {
+            return b.xp < a.xp ? 1 : -1;
+        } else {
+            return b.level < a.level ? 1 : -1;
+        }
+    });
+
+    const embed = new EmbedBuilder()
+            .setColor(0x0099FF)
+            .setTitle('Astrum Rank Leaderboard')
+            .setAuthor({ name: `${interaction.guild.name}`, iconURL: `${interaction.guild.iconURL()}` })
+            .setTimestamp();
+
+    let description;
+    for (let i = 0; i < 10; i++) {
+        user = allLevels[i].userId;
+        xp = allLevels[i].xp;
+        if(allLevels.length < i){
+            return;
+        }
+        description += `#${i + 1}| <@${user}> XP:${xp}` + "\n";
+    }
+    embed.description = description;
+    interaction.editReply({ embeds: [embed] });
+}
+const balanceProcess = async (interaction, userData, targetUserObj) => {
+    let allBalances = await UserDB.find({ guildId: interaction.guild.id }).select('-_id userId balance');
+    allBalances.sort((a, b) => { return b.balance - a.level; })
+
+    const embed = new EmbedBuilder()
+            .setColor(0x0099FF)
+            .setTitle('Astrum Rank Leaderboard')
+            .setAuthor({ name: `${interaction.guild.name}`, iconURL: `${interaction.guild.iconURL()}` })
+            .setTimestamp();
+    let description;
+    for (let i = 0; i < 10; i++) {
+        user = allBalances[i].userId;
+        xp = allBalances[i].xp;
+        if(allBalances.length < i){
+            return;
+        }
+        description += `#${i + 1}| <@${user}> XP:${xp}` + "\n";
+    }
+    embed.description = description;
+    interaction.editReply({ embeds: [embed] });
+}

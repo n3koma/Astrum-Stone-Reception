@@ -1,10 +1,9 @@
 const { Client, Interaction, ApplicationCommandOptionType, PermissionFlagsBits } = require('discord.js');
-const User = require('../../models/User');
+const UserDB = require('../../models/User');
 
 
 module.exports = {
     /**
-     *
      * @param {Client} client
      * @param {Interaction} interaction
      */
@@ -25,8 +24,8 @@ module.exports = {
 
         const floorAmount = interaction.options.get('amount');
         const payAmount = Math.floor(floorAmount.value);
-        const user = await User.findOne({ userId: targetUserId, guildId: interaction.guild.id });
-        const giveUser = await User.findOne({ userId: interactionUserId, guildId: interaction.guild.id });
+        const user = await UserDB.findOne({ userId: targetUserId, guildId: interaction.guild.id });
+        const giveUser = await UserDB.findOne({ userId: interactionUserId, guildId: interaction.guild.id });
 
         if (!user) {
           interaction.editReply(`<@${targetUserId}> はまだprofileを持っていません`);
