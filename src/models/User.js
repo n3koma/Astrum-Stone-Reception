@@ -1,5 +1,6 @@
 const { Schema, model } = require('mongoose');
 
+//DBに保存するデータの定義
 const userSchema = new Schema({
   userId: {
     type: String,

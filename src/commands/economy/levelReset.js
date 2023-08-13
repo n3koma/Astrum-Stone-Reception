@@ -1,6 +1,6 @@
 const { Client, Interaction, ApplicationCommandOptionType } = require('discord.js');
-const User = require('../../models/User');
-const Level = require('../../models/Level');
+const UserDB = require('../../models/User');
+const LevelDB = require('../../models/Level');
 
 function stones(amount) {
   if (amount === 1) return 5;
@@ -17,7 +17,6 @@ function stones(amount) {
 
 module.exports = {
     /**
-     *
      * @param {Client} client
      * @param {Interaction} interaction
      */
@@ -35,8 +34,8 @@ module.exports = {
         const interactionUserId = await interaction.member.id;
         const interactionUserObj = await interaction.guild.members.fetch(interactionUserId);
 
-        const user = await User.findOne({ userId: interactionUserId, guildId: interaction.guild.id });
-        const level = await Level.findOne({ userId: interactionUserId, guildId: interaction.guild.id });
+        const user = await UserDB.findOne({ userId: interactionUserId, guildId: interaction.guild.id });
+        const level = await LevelDB.findOne({ userId: interactionUserId, guildId: interaction.guild.id });
         const floorAmount = await interaction.options.get('amount') || level.level;
         let resetAmount;
         if (typeof floorAmount == 'object') {
@@ -70,7 +69,7 @@ module.exports = {
           
           user.lastDaily2 = new Date();
         } else {
-          user = new User({
+          user = new UserDB({
             ...query,
             lastDaily2: new Date(),
           });

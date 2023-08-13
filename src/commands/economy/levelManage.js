@@ -1,10 +1,9 @@
 const { Client, Interaction, ApplicationCommandOptionType, PermissionFlagsBits } = require('discord.js');
-const Level = require('../../models/Level');
+const LevelDB = require('../../models/Level');
 
 
 module.exports = {
     /**
-     *
      * @param {Client} client
      * @param {Interaction} interaction
      */
@@ -26,11 +25,11 @@ module.exports = {
         const floorAmount = interaction.options.get('level');
         const levelAmount = Math.floor(floorAmount.value);
         const manageType = interaction.options.get('type');
-        const level = await Level.findOne({ userId: targetUserId, guildId: interaction.guild.id });
+        const level = await LevelDB.findOne({ userId: targetUserId, guildId: interaction.guild.id });
 
         console.log( floorAmount, levelAmount ) 
 
-        if (!Level) {
+        if (!LevelDB) {
           interaction.editReply(`<@${targetUserId}> はまだprofileを持っていません`);
           return;
         }
